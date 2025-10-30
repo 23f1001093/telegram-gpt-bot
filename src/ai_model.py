@@ -1,40 +1,38 @@
+import os
 import httpx
-from src.config import OPENAI_API_KEY
+
+DEFAULT_MODEL = "openai/gpt-oss-20b"
+DEFAULT_SYSTEM_PROMPT = "AI Telegram bot."
+DEFAULT_TEMPERATURE = 0.7
+DEFAULT_MAX_TOKENS = 200
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 async def get_gpt_reply(messages):
-    url = "https://api.openai.com/v1/chat/completions"
+    api_key = os.getenv("OPENROUTER_API_KEY")   
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY is not set in environment variables")
+
     headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": "https://49c41ee4ea67.ngrok-free.app"
+ 
     }
+
     payload = {
-        "model": "gpt-3.5-turbo",  # Free tier model
+        "model": DEFAULT_MODEL,
         "messages": messages,
-        "max_tokens": 180
+        "max_tokens": DEFAULT_MAX_TOKENS,
+        "temperature": DEFAULT_TEMPERATURE,
     }
+
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=payload)
-        
-        try:
-            data = response.json()
-        except Exception as e:
-            print("Error decoding OpenAI response as JSON:", e)
-            print("Raw response text:", response.text)
-            return "Sorry, couldn't decode OpenAI response."
-        
-        print("OpenAI response:", data)
-        
-        # Error handling block goes here!
-        if "error" in data:
-            error_msg = data["error"]["message"]
-            print("OpenAI API returned error:", error_msg)
-            if "quota" in error_msg:
-                return "Sorry, my AI backend is out of quota now. Please try again later."
-            return f"OpenAI error: {error_msg}"
-        
-        # If no error, proceed to extract answer
-        if "choices" in data and len(data["choices"]) > 0:
-            return data["choices"][0]["message"]["content"]
-        
-        print("Unexpected OpenAI API response:", data)
-        return "Sorry, no reply could be generated."
+        resp = await client.post(OPENROUTER_API_URL, headers=headers, json=payload)
+        resp.raise_for_status()
+        result = resp.json()
+
+    try:
+        return result["choices"][0]["message"]["content"]
+    except (KeyError, IndexError):
+        raise RuntimeError(f"Bad response from OpenRouter: {result}")
+

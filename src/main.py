@@ -2,8 +2,15 @@ from fastapi import FastAPI, Request, Header
 from src.ai_model import get_gpt_reply
 from src.telegram_api import send_message
 from src.config import WEBHOOK_SECRET
+from dotenv import load_dotenv
+from src.routes import api_router
+load_dotenv()
+import os
+print("Loaded OPENROUTER_API_KEY:", os.getenv("OPENROUTER_API_KEY"))
 
 app = FastAPI()
+
+app.include_router(api_router)
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request, x_secret: str = Header(None)):
