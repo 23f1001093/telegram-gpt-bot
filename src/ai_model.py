@@ -15,7 +15,7 @@ async def get_gpt_reply(messages):
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "https://49c41ee4ea67.ngrok-free.app"
+        "HTTP-Referer": "https://d8b106d01091.ngrok-free.app"
  
     }
 
@@ -35,4 +35,3 @@ async def get_gpt_reply(messages):
         return result["choices"][0]["message"]["content"]
     except (KeyError, IndexError):
         raise RuntimeError(f"Bad response from OpenRouter: {result}")
-
